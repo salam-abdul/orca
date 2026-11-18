@@ -1,3 +1,14 @@
+import {
+  WEB_MOBILE_ENDPOINT,
+  WEB_MOBILE_CREATE,
+  WEB_MOBILE_DEVICES,
+  WEB_MOBILE_REVOKE,
+  WEB_MOBILE_NOT_APPROVED,
+  WebMobileEndpointParamsSchema,
+  WebMobileCreateParamsSchema,
+  WebMobileDevicesParamsSchema,
+  WebMobileRevokeParamsSchema
+} from '../../../../../shared/web-mobile-pairing-contract'
 import { defineMethod } from '../../core'
 import {
   DECLARE_ORCA_ACCOUNT_METHOD,
@@ -31,6 +42,38 @@ import {
 } from '../../../../../shared/remote-runtime/pairing/pairing-create-offer-contract'
 
 export const PAIRING_METHODS = [
+  // host-admin is necessary, but insufficient: the transport supplies this separate,
+  // mobile-only capability only to owner-allowlisted encrypted runtime clients.
+  defineMethod({
+    name: WEB_MOBILE_ENDPOINT,
+    permission: 'host-admin',
+    params: WebMobileEndpointParamsSchema,
+    handler: (_, ctx) => {
+      const endpoint = ctx.webMobilePairing?.endpoint()
+      return endpoint ? { available: true as const, endpoint } : WEB_MOBILE_NOT_APPROVED
+    }
+  }),
+  defineMethod({
+    name: WEB_MOBILE_CREATE,
+    permission: 'host-admin',
+    params: WebMobileCreateParamsSchema,
+    handler: (params, ctx) =>
+      ctx.webMobilePairing
+        ? ctx.webMobilePairing.create(params.rotate === true)
+        : WEB_MOBILE_NOT_APPROVED
+  }),
+  defineMethod({
+    name: WEB_MOBILE_DEVICES,
+    permission: 'host-admin',
+    params: WebMobileDevicesParamsSchema,
+    handler: (_, ctx) => ctx.webMobilePairing?.devices() ?? { devices: [] }
+  }),
+  defineMethod({
+    name: WEB_MOBILE_REVOKE,
+    permission: 'host-admin',
+    params: WebMobileRevokeParamsSchema,
+    handler: (params, ctx) => ctx.webMobilePairing?.revoke(params.deviceId) ?? { revoked: false }
+  }),
   defineMethod({
     name: PAIRING_CREATE_OFFER_METHOD,
     // Only this host's owner CLI gets the context; paired clients and phones never hold pairing-admin.

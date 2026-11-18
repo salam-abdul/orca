@@ -67,3 +67,37 @@ pnpm dev:fresh [--keep] [--seed-from[=<profile dir>]]   # temporary profile, rem
 - Renderer misbehaving in dev: set `ORCA_DEV_BUNDLED=0` to turn off bundled dev mode, and report it.
 - Test passes alone but fails after others: add `// @orca-isolated-worker` to the file; `ORCA_VITEST_ISOLATE_EVERY_FILE=1` isolates every file to confirm a leak. Windows always isolates every file, because native addons kept across files corrupt the heap.
 - Slow typechecks: where supported, `pnpm tc` keeps incremental caches in `.cache/typecheck/`; delete it to force a fresh check.
+
+## Phone pairing from a headless server's browser client
+
+A paired browser does not receive the owner's pairing-admin permission. The server
+owner can opt specific E2EE-authenticated runtime device IDs into mobile-only
+pairing by setting both environment variables before starting the server:
+
+- `ORCA_WEB_MOBILE_PAIRING_ENDPOINT`: the fixed reachable `wss://` origin, for
+  example `wss://orca.example.com`. Credentials, paths, queries and fragments are
+  refused. The setting does not configure TLS or expose a port.
+- `ORCA_WEB_MOBILE_PAIRING_CLIENT_IDS`: comma-separated paired runtime device UUIDs
+  (up to 16). These are device identities, not names or client-chosen request IDs.
+
+Absent or invalid settings disable the capability. An owner must approve a new
+browser identity explicitly; clearing its saved key does not transfer permission.
+These settings grant the listed clients permission to issue phone access, so keep
+this an explicit owner decision. Do not put credentials or pairing URLs in logs.
+
+In an approved browser, open Orca Mobile, choose LAN, and generate the QR. The
+address is supplied by the server policy, including when the server lives behind
+a reverse proxy. The phone must reach that address (for example over the home LAN
+or a private overlay network). This flow does not enable Orca Relay.
+
+Unscanned codes expire after ten minutes. Phones keep their access after scanning.
+The browser can list and revoke only the mobile devices it created, and up to 32
+paired phones can be issued per browser. The existing device registry records the
+creator; revoking the issuing runtime device also revokes its created credentials.
+Key migration preserves creator ownership. Existing unrelated phones, desktops,
+owner-only pairing methods, and listener/network policy remain unchanged.
+
+The paired browser cannot choose another destination, issue desktop credentials,
+set grants, or access another issuer's phone-management scope. A phone and a
+non-E2EE request cannot use these browser methods. `orca pair --mobile` remains the
+owner's CLI alternative.

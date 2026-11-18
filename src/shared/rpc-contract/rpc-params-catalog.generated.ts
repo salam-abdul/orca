@@ -1024,6 +1024,12 @@ import {
   SkillUploadChunkRequestSchema,
   SkillUploadCommitRequestSchema
 } from '../skills/sharing/skill-upload-session-contract'
+import {
+  WebMobileCreateParamsSchema,
+  WebMobileDevicesParamsSchema,
+  WebMobileEndpointParamsSchema,
+  WebMobileRevokeParamsSchema
+} from '../web-mobile-pairing-contract'
 
 // Why: the host parses params with these schemas, so a client that matches this map
 // matches the dispatcher. Clients must import it for types only — parsing a params
@@ -1867,6 +1873,10 @@ export const RPC_PARAMS_BY_METHOD = {
   'pairing.getEndpoints': PairingGetEndpointsParamsSchema,
   'pairing.provisionRelay': PairingProvisionRelayParamsSchema,
   'pairing.registerDeviceKey': RegisterDeviceKeyParamsSchema,
+  'pairing.webMobile.create': WebMobileCreateParamsSchema,
+  'pairing.webMobile.devices': WebMobileDevicesParamsSchema,
+  'pairing.webMobile.endpoint': WebMobileEndpointParamsSchema,
+  'pairing.webMobile.revoke': WebMobileRevokeParamsSchema,
   'plugins.catalogAdd': PluginCatalogAddParams,
   'plugins.catalogList': null,
   'plugins.catalogRemove': PluginCatalogRemoveParams,

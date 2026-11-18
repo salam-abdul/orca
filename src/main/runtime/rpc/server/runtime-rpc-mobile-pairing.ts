@@ -1,3 +1,7 @@
+import {
+  createWebMobilePairingContext,
+  type WebMobilePairingContext
+} from './pairing/web-mobile-pairing'
 import type { MobilePairingConnectionMode } from '../../../../shared/remote-runtime/pairing/mobile-pairing-connection-mode'
 import {
   mobileRelayMintFailureFromUnknown,
@@ -22,6 +26,13 @@ import {
 const RELAY_PROVIDER_INSTALL_WAIT_MS = 15_000
 
 export class RuntimeRpcMobilePairing extends RuntimeRpcPairing {
+  protected override webMobilePairingFor(
+    device: { deviceId: string; scope: string },
+    authenticatedE2EESocket: boolean
+  ): WebMobilePairingContext | undefined {
+    return createWebMobilePairingContext(device, authenticatedE2EESocket, this)
+  }
+
   protected override ownerPairingOffers(): PairingOffersRpcContext {
     return {
       create: async (params, createdByDeviceId, createdByClientInstanceId) => {
@@ -34,23 +45,28 @@ export class RuntimeRpcMobilePairing extends RuntimeRpcPairing {
     }
   }
 
-  async createMobilePairingOffer(args: {
-    address?: string | null
-    connectionMode?: MobilePairingConnectionMode
-    name?: string
-    rotate?: boolean
-    offerTtlMs?: number
-    createdByDeviceId?: string
-  }): Promise<MobilePairingOffer> {
+  async createMobilePairingOffer(
+    args: {
+      address?: string | null
+      connectionMode?: MobilePairingConnectionMode
+      name?: string
+      rotate?: boolean
+      offerTtlMs?: number
+      createdByDeviceId?: string
+    },
+    options: { preserveNetworkExposure?: boolean } = {}
+  ): Promise<MobilePairingOffer> {
     // Network pairing opts into LAN exposure: widen before advertising QR endpoints; failed widening stays unavailable on loopback (STA-2370).
-    try {
-      await this.ensureNetworkExposure()
-    } catch (error) {
-      console.error(
-        '[runtime] Network exposure failed while creating a mobile pairing offer:',
-        error
-      )
-      return pairingUnavailable('network_exposure_failed', NETWORK_EXPOSURE_FAILED_GUIDANCE)
+    if (!options.preserveNetworkExposure) {
+      try {
+        await this.ensureNetworkExposure()
+      } catch (error) {
+        console.error(
+          '[runtime] Network exposure failed while creating a mobile pairing offer:',
+          error
+        )
+        return pairingUnavailable('network_exposure_failed', NETWORK_EXPOSURE_FAILED_GUIDANCE)
+      }
     }
     if (args.connectionMode === 'local-only') {
       this.mobilePairingOfferGeneration += 1

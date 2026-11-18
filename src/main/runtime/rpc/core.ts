@@ -1,3 +1,4 @@
+import type { WebMobilePairingContext } from './server/pairing/web-mobile-pairing'
 import type { DeclareOrcaAccountParams } from '../../../shared/remote-runtime/pairing/paired-desktop-account-contract'
 import type { RuntimeClientCapabilities } from './callers/runtime-client-capabilities'
 import type { ZodError, ZodType } from 'zod'
@@ -183,6 +184,7 @@ export type RpcContext = {
   // Pin authenticated federation identity without exposing its token to handlers or storage.
   authenticatedCallerFingerprint?: string
   pairing?: PairingRpcContext
+  webMobilePairing?: WebMobilePairingContext
   pairingOffers?: PairingOffersRpcContext
   deviceSelf?: DeviceSelfRpcContext
   // Available only on a desktop relay for its configured servers.

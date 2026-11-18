@@ -62,6 +62,7 @@ export function planDeviceKeyFork(
     scope: legacy.scope,
     ...(legacy.grants ? { grants: [...legacy.grants] } : {}),
     pairingReach: legacy.pairingReach,
+    ...(legacy.createdByDeviceId ? { createdByDeviceId: legacy.createdByDeviceId } : {}),
     ...(legacy.mobilePairingConnectionMode
       ? { mobilePairingConnectionMode: legacy.mobilePairingConnectionMode }
       : {}),

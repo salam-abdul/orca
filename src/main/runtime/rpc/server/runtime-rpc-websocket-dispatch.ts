@@ -1,3 +1,5 @@
+import { injectDeviceScope } from './runtime-rpc-device-scope-response'
+import type { WebMobilePairingContext } from './pairing/web-mobile-pairing'
 import type { WebSocket } from 'ws'
 import type {
   PairingGetEndpointsParams,
@@ -7,9 +9,8 @@ import { callerScopeOf, devicePrincipalOf } from './pairing/device-principal'
 import { registerSocketDeviceKey } from './runtime-rpc-device-key-registration'
 import { exchangeSocketPairingTicket } from './runtime-rpc-pairing-ticket-exchange'
 import type { AuthenticatedMobileSocket } from '../mobile/mobile-socket-wiring'
-import type { RpcRequest, RpcResponse } from '../core'
+import type { RpcRequest } from '../core'
 import type { WebSocketTransport } from '../transports/websocket/ws-transport'
-import type { DeviceScope } from '../../../../shared/remote-runtime/session-graph/runtime-session-contracts'
 import { RuntimeRpcMobileDevices } from './runtime-rpc-mobile-devices'
 import { classifyRuntimeLongPoll } from './runtime-rpc-long-poll'
 import type { RpcBinarySender } from '../transports/rpc-binary-sender'
@@ -19,21 +20,14 @@ import { MOBILE_RPC_METHOD_ROUTES } from './runtime-rpc-mobile-method-routing'
 import { parseExecutionHostId } from '../../../../shared/execution-host/execution-host'
 import { WorktreeRemove } from '../../../../shared/rpc-contract/workspaces/worktree-params'
 
-// Stamp proven scope at transport boundary; status.get has no connection context.
-function injectDeviceScope(response: string, scope: DeviceScope): string {
-  try {
-    const parsed = JSON.parse(response) as RpcResponse
-    if (parsed.ok !== true || typeof parsed.result !== 'object' || parsed.result === null) {
-      return response
-    }
-    ;(parsed.result as Record<string, unknown>).deviceScope = scope
-    return JSON.stringify(parsed)
-  } catch {
-    return response
-  }
-}
-
 export class RuntimeRpcWebSocketDispatch extends RuntimeRpcMobileDevices {
+  protected webMobilePairingFor(
+    _device: { deviceId: string; scope: string },
+    _authenticatedE2EESocket: boolean
+  ): WebMobilePairingContext | undefined {
+    return undefined
+  }
+
   // Relay only to configured execution hosts; unreachable targets fail, never run locally. Return null after relay/reply.
   private relayMobileRequest(
     request: RpcRequest,
@@ -272,6 +266,7 @@ export class RuntimeRpcWebSocketDispatch extends RuntimeRpcMobileDevices {
               }
             : undefined,
         pairing: pairingContext,
+        webMobilePairing: this.webMobilePairingFor(device, !!authenticatedSocket),
         deviceSelf:
           authenticatedSocket && this.deviceRegistry
             ? {
